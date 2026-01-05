@@ -132,17 +132,9 @@
             })();
         </script>
 
-        <!-- Section de grattage (simplifiée) : le titre et le champ 'Mystère du 5' ont été retirés.
-             Le grattage reste visible et actif. -->
-        <section id="scratch-section" aria-label="Grattage">
-            <div class="scratch-wrap">
-                <div class="reveal" id="reveal">
-                    <img id="reveal-image" src="https://via.placeholder.com/720x320.png?text=Dommage,+pas+maintenant+!" alt="Dommage, pas maintenant !" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
-                    <h1 id="reveal-text" style="display:none;margin:0;font-family:'Playfair Display',serif;font-size:28px;color:var(--text)">Veux-tu m'épouser ?</h1>
-                </div>
-                <canvas class="overlay" id="scratcher"></canvas>
-            </div>
-            <div id="poem" class="poem" style="display:none">L'énigme n'est pas encore résolue... Patience.</div>
+        <!-- Lien vers la page de grattage -->
+        <section id="scratch-link" style="margin-top:32px;text-align:center">
+            <a href="tente-ta-chance.html" style="display:inline-block;padding:12px 18px;background:var(--mustard);color:#1a1110;border-radius:10px;font-weight:600;text-decoration:none">Tentes ta chance</a>
         </section>
     </main>
 
@@ -169,7 +161,6 @@
             verifier();
             startCounter();
             initParallax();
-            initScratch();
         };
 
         // Counter depuis la date de rencontre (data attribute)
@@ -199,105 +190,7 @@
             });
         }
 
-        // Scratch card implementation
-        function initScratch(){
-            const canvas = document.getElementById('scratcher');
-            const wrap = canvas.parentElement;
-            const revealBox = document.getElementById('reveal');
-            const revealImage = document.getElementById('reveal-image');
-            const revealText = document.getElementById('reveal-text');
-            const poem = document.getElementById('poem');
-            const secretArea = document.getElementById('scratch-section') || document.getElementById('secret-area');
-
-            // Target (obfuscated): reconstructed at runtime to avoid a plain-text date in source
-            let _targetReveal = null;
-            function getTargetReveal(){
-                if(_targetReveal) return _targetReveal;
-                // obfuscated fragments (non-obvious integers)
-                const a = [4050, 15];
-                const b = [13, 103];
-                const c = [0, 0];
-                // offsets hidden as expressions to deter casual searching
-                const offsets = [ (2000 + 24), (10 - 3), (20 - 13), (9 * 9), 0, 0 ];
-                const ob = a.concat(b, c);
-                const vals = ob.map((v,i) => v - offsets[i]);
-                // vals -> [year, month, day, hour, minute, second]
-                _targetReveal = new Date(vals[0], vals[1] - 1, vals[2], vals[3], vals[4] || 0, vals[5] || 0);
-                return _targetReveal;
-            }
-
-            function updateRevealContent(){
-                const now = new Date();
-                const TARGET_REVEAL = getTargetReveal();
-                if(now >= TARGET_REVEAL){
-                    revealImage.style.display = 'none';
-                    revealText.style.display = 'block';
-                    revealText.textContent = "Veux-tu m'épouser ?";
-                } else {
-                    revealImage.style.display = 'block';
-                    revealText.style.display = 'none';
-                }
-            }
-
-            // initial update + periodic check (toutes les 30s)
-            updateRevealContent(); setInterval(updateRevealContent, 30*1000);
-
-            function setupCanvas(){
-                function resize(){
-                    canvas.width = wrap.clientWidth;
-                    canvas.height = wrap.clientHeight;
-                    drawOverlay();
-                }
-                function drawOverlay(){
-                    const ctx = canvas.getContext('2d');
-                    ctx.globalCompositeOperation = 'source-over';
-                    // Draw golden overlay
-                    const g = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
-                    g.addColorStop(0,'#d4a017'); g.addColorStop(1,'#f3d98a');
-                    ctx.fillStyle = g; ctx.fillRect(0,0,canvas.width,canvas.height);
-                    ctx.globalCompositeOperation = 'destination-out';
-                }
-
-                resize();
-                window.addEventListener('resize', resize);
-
-                let drawing=false;
-                function down(e){drawing=true; draw(e);} 
-                function up(){drawing=false; checkClear();}
-                function move(e){ if(drawing) draw(e); }
-
-                function getPos(e){
-                    const r = canvas.getBoundingClientRect();
-                    const x = (e.touches?e.touches[0].clientX:e.clientX) - r.left;
-                    const y = (e.touches?e.touches[0].clientY:e.clientY) - r.top;
-                    return {x,y};
-                }
-                function draw(e){
-                    const ctx = canvas.getContext('2d');
-                    const p = getPos(e);
-                    ctx.beginPath(); ctx.arc(p.x,p.y,26,0,Math.PI*2); ctx.fill();
-                }
-
-                canvas.addEventListener('mousedown',down); canvas.addEventListener('touchstart',down);
-                window.addEventListener('mouseup',up); canvas.addEventListener('touchend',up);
-                canvas.addEventListener('mousemove',move); canvas.addEventListener('touchmove',move);
-
-                function checkClear(){
-                    try{
-                        const ctx = canvas.getContext('2d');
-                        const imgData = ctx.getImageData(0,0,canvas.width,canvas.height).data;
-                        let cleared=0; for(let i=3;i<imgData.length;i+=4){ if(imgData[i]===0) cleared++; }
-                        const pct = cleared / (canvas.width*canvas.height) ;
-                        if(pct > 0.25){ // 25% cleared
-                            canvas.style.transition='opacity .6s'; canvas.style.opacity='0'; setTimeout(()=>canvas.style.display='none',700);
-                        }
-                    }catch(e){ /* guard for cross-origin or small canvases */ }
-                }
-            }
-
-            // Initialize canvas immediately so user can gratter dès maintenant
-            setupCanvas();
-        }
+        // Le système de grattage a été déplacé vers une page dédiée (tente-ta-chance.html)
     </script>
 
     <script src="auto-timeline.js"></script>

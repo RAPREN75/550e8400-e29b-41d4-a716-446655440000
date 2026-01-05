@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tentes ta chance — Grattage</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        :root{
+            --mauve-1: #2b0b2f;
+            --mauve-2: #3b0f4a;
+            --violet-deep: #190824;
+            --emerald: #00c38a;
+            --electric-blue: #00a8ff;
+            --mustard: #d4a017;
+            --text: #efe9ff;
+            --muted: rgba(255,255,255,0.14);
+        }
+        html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial,sans-serif;color:var(--text);}
+        body{background: linear-gradient(160deg,var(--mauve-1) 10%, var(--mauve-2) 60%, var(--violet-deep) 100%);display:flex;align-items:center;justify-content:center;padding:36px;}
+        .container{width:100%;max-width:820px}
+        .scratch-wrap{position:relative;width:100%;height:380px;border-radius:12px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.5)}
+        .reveal{position:absolute;inset:0;background:linear-gradient(180deg,#3b0f4a,#2b0b2f);display:flex;align-items:center;justify-content:center;padding:24px;text-align:center}
+        .reveal h1{font-family:'Playfair Display',serif;font-size:28px;margin:0;color:var(--text)}
+        .overlay{position:absolute;inset:0;background:linear-gradient(90deg,#c9a94b,#f3d98a);display:block;cursor:crosshair}
+        .back-link{display:inline-block;margin-bottom:14px;color:var(--muted);text-decoration:none}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a class="back-link" href="index.html">← Retour</a>
+        <h2 style="font-family:'Playfair Display',serif;margin:6px 0 12px">Tentes ta chance</h2>
+        <div class="scratch-wrap">
+            <div class="reveal" id="reveal">
+                <img id="reveal-image" src="https://via.placeholder.com/820x380.png?text=Dommage,+pas+maintenant+!" alt="Dommage, pas maintenant !" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">
+                <h1 id="reveal-text" style="display:none;margin:0;font-family:'Playfair Display',serif;font-size:32px;color:var(--text)">Veux-tu m'épouser ?</h1>
+            </div>
+            <canvas class="overlay" id="scratcher"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Copie de la logique de grattage (reconstruction obfusquée de la date)
+        (function(){
+            const canvas = document.getElementById('scratcher');
+            const wrap = canvas.parentElement;
+            const revealImage = document.getElementById('reveal-image');
+            const revealText = document.getElementById('reveal-text');
+
+            let _targetReveal = null;
+            function getTargetReveal(){
+                if(_targetReveal) return _targetReveal;
+                // même obfuscation que dans index.html
+                const a = [4050, 15];
+                const b = [13, 103];
+                const c = [0, 0];
+                const offsets = [ (2000 + 24), (10 - 3), (20 - 13), (9 * 9), 0, 0 ];
+                const ob = a.concat(b, c);
+                const vals = ob.map((v,i) => v - offsets[i]);
+                _targetReveal = new Date(vals[0], vals[1] - 1, vals[2], vals[3], vals[4] || 0, vals[5] || 0);
+                return _targetReveal;
+            }
+
+            function updateRevealContent(){
+                const now = new Date();
+                const TARGET_REVEAL = getTargetReveal();
+                if(now >= TARGET_REVEAL){
+                    revealImage.style.display = 'none';
+                    revealText.style.display = 'block';
+                } else {
+                    revealImage.style.display = 'block';
+                    revealText.style.display = 'none';
+                }
+            }
+
+            updateRevealContent(); setInterval(updateRevealContent, 30*1000);
+
+            function setupCanvas(){
+                function resize(){
+                    canvas.width = wrap.clientWidth;
+                    canvas.height = wrap.clientHeight;
+                    drawOverlay();
+                }
+                function drawOverlay(){
+                    const ctx = canvas.getContext('2d');
+                    ctx.globalCompositeOperation = 'source-over';
+                    const g = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
+                    g.addColorStop(0,'#d4a017'); g.addColorStop(1,'#f3d98a');
+                    ctx.fillStyle = g; ctx.fillRect(0,0,canvas.width,canvas.height);
+                    ctx.globalCompositeOperation = 'destination-out';
+                }
+
+                resize();
+                window.addEventListener('resize', resize);
+
+                let drawing=false;
+                function down(e){drawing=true; draw(e);} 
+                function up(){drawing=false; checkClear();}
+                function move(e){ if(drawing) draw(e); }
+
+                function getPos(e){
+                    const r = canvas.getBoundingClientRect();
+                    const x = (e.touches?e.touches[0].clientX:e.clientX) - r.left;
+                    const y = (e.touches?e.touches[0].clientY:e.clientY) - r.top;
+                    return {x,y};
+                }
+                function draw(e){
+                    const ctx = canvas.getContext('2d');
+                    const p = getPos(e);
+                    ctx.beginPath(); ctx.arc(p.x,p.y,30,0,Math.PI*2); ctx.fill();
+                }
+
+                canvas.addEventListener('mousedown',down); canvas.addEventListener('touchstart',down);
+                window.addEventListener('mouseup',up); canvas.addEventListener('touchend',up);
+                canvas.addEventListener('mousemove',move); canvas.addEventListener('touchmove',move);
+
+                function checkClear(){
+                    try{
+                        const ctx = canvas.getContext('2d');
+                        const imgData = ctx.getImageData(0,0,canvas.width,canvas.height).data;
+                        let cleared=0; for(let i=3;i<imgData.length;i+=4){ if(imgData[i]===0) cleared++; }
+                        const pct = cleared / (canvas.width*canvas.height) ;
+                        if(pct > 0.25){ canvas.style.transition='opacity .6s'; canvas.style.opacity='0'; setTimeout(()=>canvas.style.display='none',700); }
+                    }catch(e){ }
+                }
+            }
+
+            setupCanvas();
+        })();
+    </script>
+</body>
+</html>
