@@ -36,8 +36,9 @@
         </div>
         <div class="scratch-wrap" id="lux-scratch">
             <div class="reveal" id="reveal">
-                <img id="reveal-image" src="https://via.placeholder.com/820x380.png?text=Dommage,+pas+maintenant+!" alt="Dommage, pas maintenant !" style="width:100%;height:100%;object-fit:cover;border-radius:6px;filter:blur(6px);transition:filter .3s ease;position:relative;z-index:1">
-                <h1 id="reveal-text" style="display:block;position:absolute;z-index:2;margin:0;font-family:'Playfair Display',serif;font-size:32px;color:rgba(255,241,200,0.95);text-shadow:0 2px 8px rgba(0,0,0,0.6);filter:blur(6px);transition:filter .3s ease;pointer-events:none">Veux-tu m'épouser ?</h1>
+                <img id="reveal-image" src="image/reveal-image.png" alt="Dommage, pas maintenant !" style="width:100%;height:100%;object-fit:cover;border-radius:6px;filter:blur(6px);transition:filter .3s ease;position:relative;z-index:1">
+                <!-- reveal-text replaced by an image so it can be styled/blurred the same way as the background -->
+                <img id="reveal-text" src="image/reveal-text.jpg" alt="Veux-tu m'épouser ?" style="display:block;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:2;margin:0;font-family:'Playfair Display',serif;font-size:32px;color:rgba(255,241,200,0.95);text-shadow:0 2px 8px rgba(0,0,0,0.6);filter:blur(6px);transition:filter .3s ease;pointer-events:none;max-width:80%;height:auto;border-radius:6px">
             </div>
             <!-- canvas pour couche à gratter -->
             <canvas class="overlay" id="scratcher" style="position:absolute;inset:0;z-index:3"></canvas>
@@ -198,9 +199,9 @@
                         const TARGET = getTargetReveal();
                         const now = new Date();
                         if(now >= TARGET){
-                            revealText.textContent = "Justine C. Veux tu m'épouser ?";
+                            revealText.textContent = "Justine C. veux-tu m'épouser ?";
                         } else {
-                            revealText.textContent = 'Dommage, un autre jour !';
+                            revealText.textContent = 'Dommage, peut-être un autre jour !';
                         }
                         // ensure the text is fully visible and on top
                         revealText.style.zIndex = 10;
