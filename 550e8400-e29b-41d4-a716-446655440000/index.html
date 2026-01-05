@@ -74,30 +74,37 @@
 
     <main>
         <section aria-label="Les Rendez-vous du 5" class="timeline" id="timeline">
-            <!-- Exemple de bulles. Remplacez les src par vos images réelles -->
-            <div class="bubble past" data-date="2023-05-05">
-                <img src="https://picsum.photos/seed/1/200" alt="photo 1">
-                <p>Mai — Bal au clair</p>
-            </div>
-            <div class="bubble past" data-date="2023-06-05">
-                <img src="https://picsum.photos/seed/2/200" alt="photo 2">
-                <p>Juin — Promenade</p>
-            </div>
-            <div class="bubble current" data-date="2024-01-05">
-                <img src="https://picsum.photos/seed/3/200" alt="photo courante">
-                <p>Aujourd'hui — Le 5</p>
-            </div>
-            <div class="bubble future" data-date="2025-02-05">
-                <div class="lock">🔒</div>
-                <img src="https://picsum.photos/seed/4/200" alt="photo future">
-                <p>Fév — Verrouillé</p>
-            </div>
-            <div class="bubble future" data-date="2025-03-05">
-                <div class="lock">🔒</div>
-                <img src="https://picsum.photos/seed/5/200" alt="photo future">
-                <p>Mars — Verrouillé</p>
-            </div>
+            <!-- Les bulles sont générées dynamiquement pour 2026 par le script ci-dessous -->
         </section>
+        <script>
+            (function(){
+                const monthNames = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+                const timeline = document.getElementById('timeline');
+                if(!timeline) return;
+                timeline.innerHTML = '';
+                const year = 2026;
+                const today = new Date();
+                for(let m=1;m<=12;m++){
+                    const id = `etape-${year}-${String(m).padStart(2,'0')}-05`;
+                    const href = `etape-${year}-${String(m).padStart(2,'0')}-05.html`;
+                    const unlockDate = new Date(year,m-1,5,0,0,0,0);
+                    const a = document.createElement('a');
+                    a.id = id;
+                    a.href = href;
+                    a.className = 'bubble';
+                    if(today.getFullYear()===year && today.getMonth()+1===m && today.getDate()===5){
+                        a.classList.add('current');
+                    } else if(today >= unlockDate){
+                        a.classList.add('past');
+                    } else {
+                        a.classList.add('future');
+                    }
+                    const seed = encodeURIComponent(`${year}-${m}`);
+                    a.innerHTML = `<img src="https://picsum.photos/seed/${seed}/200" alt="${monthNames[m-1]}"><p>${monthNames[m-1]}</p>`;
+                    timeline.appendChild(a);
+                }
+            })();
+        </script>
 
         <section id="secret-section" aria-labelledby="mystere">
             <h3 id="mystere">Le Mystère du 5</h3>
