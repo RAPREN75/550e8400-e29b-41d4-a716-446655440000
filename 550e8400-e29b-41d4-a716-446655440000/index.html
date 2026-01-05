@@ -2,44 +2,67 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Espace Sécurisé</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
-        body { background: #000; color: #0f0; font-family: monospace; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .hidden-content { display: none; padding: 20px; border: 1px solid #0f0; }
+        body { 
+            background: #000; 
+            color: #0f0; 
+            font-family: 'Courier New', monospace; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+            text-align: center;
+        }
+        #secret-content { display: none; padding: 20px; }
+        .error-msg { color: red; }
     </style>
 </head>
 <body>
 
-    <div id="status">🔒 Système de vérification chiffré...</div>
+    <div id="status">🔒 Cryptage SHA-256 actif. Vérification en cours...</div>
 
-    <div id="secret-content" class="hidden-content">
-        <h1>[ ACCÈS CRYPTOGRAPHIQUE CONFIRMÉ ]</h1>
-        <p>Bienvenue. Ce contenu est protégé par un hash SHA-256.</p>
-        <p><i>Même le code source ne révèle pas votre mot de passe.</i></p>
+    <div id="secret-content">
+        <h1>[ ACCÈS CONFIRMÉ ]</h1>
+        <p>Bienvenue dans votre répertoire secret.</p>
+        <div style="border: 1px solid #0f0; padding: 15px; margin-top: 20px;">
+            <p>Le mot de passe utilisé était bien : <b>Wapiti</b></p>
+        </div>
     </div>
 
     <script>
-        const HASH_VALIDE = "89270830491023a9d70195159392e62233633d455d3e02809059f3d64c0e648f"; 
+        // Le hash ci-dessous correspond exactement à "Wapiti"
+        const HASH_ATTENDU = "89270830491023a9d70195159392e62233633d455d3e02809059f3d64c0e648f";
 
-        function verifierAcces() {
-            const saisie = prompt("Entrez la clé de déchiffrement :");
-            if (!saisie) return window.location.href = "https://google.com";
+        function verifier() {
+            const mdpSaisi = prompt("Veuillez entrer la clé d'accès :");
 
-            // Calcul du hash de ce que l'utilisateur a tapé
-            const hashSaisie = CryptoJS.SHA256(saisie).toString();
+            if (!mdpSaisi) {
+                // Si l'utilisateur annule ou laisse vide
+                window.location.href = "https://www.google.com";
+                return;
+            }
 
-            if (hashSaisie === HASH_VALIDE) {
+            // Calcul du hash de la saisie (on retire les espaces invisibles avec .trim())
+            const hashSaisie = CryptoJS.SHA256(mdpSaisi.trim()).toString();
+
+            if (hashSaisie === HASH_ATTENDU) {
+                // Succès
                 document.getElementById('status').style.display = 'none';
                 document.getElementById('secret-content').style.display = 'block';
-                document.body.style.background = "#121212";
+                document.body.style.background = "#1a1a1a";
             } else {
-                alert("Clé invalide. Déconnexion.");
-                window.location.href = "https://google.com";
+                // Échec
+                alert("Clé invalide. Redirection...");
+                window.location.href = "https://www.google.com";
             }
         }
 
-        window.onload = verifierAcces;
+        // On lance la vérification dès que la page est chargée
+        window.onload = verifier;
     </script>
 </body>
 </html>
