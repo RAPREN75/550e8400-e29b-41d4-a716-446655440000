@@ -132,22 +132,15 @@
             })();
         </script>
 
-        <section id="secret-section" aria-labelledby="mystere">
-            <h3 id="mystere">Le Mystère du 5</h3>
-            <div class="key-row">
-                <input id="final-key" placeholder="Entrez la clé finale" aria-label="Entrez la clé finale">
-                <button id="unlock-btn">Valider</button>
-            </div>
-            <!-- Le secret est toujours visible: le grattage révèle soit une image 'Dommage, pas maintenant !',
-                 soit, à partir de la date cible (06/08/2026 22:00), le texte de la demande. -->
-            <div id="secret-area" style="display:block">
-                <div class="scratch-wrap">
-                    <div class="reveal" id="reveal">
-                        <img id="reveal-image" src="https://via.placeholder.com/720x320.png?text=Dommage,+pas+maintenant+!" alt="Dommage, pas maintenant !" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
-                        <h1 id="reveal-text" style="display:none;margin:0;font-family:'Playfair Display',serif;font-size:28px;color:var(--text)">Veux-tu m'épouser ?</h1>
-                    </div>
-                    <canvas class="overlay" id="scratcher"></canvas>
+        <!-- Section de grattage (simplifiée) : le titre et le champ 'Mystère du 5' ont été retirés.
+             Le grattage reste visible et actif. -->
+        <section id="scratch-section" aria-label="Grattage">
+            <div class="scratch-wrap">
+                <div class="reveal" id="reveal">
+                    <img id="reveal-image" src="https://via.placeholder.com/720x320.png?text=Dommage,+pas+maintenant+!" alt="Dommage, pas maintenant !" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
+                    <h1 id="reveal-text" style="display:none;margin:0;font-family:'Playfair Display',serif;font-size:28px;color:var(--text)">Veux-tu m'épouser ?</h1>
                 </div>
+                <canvas class="overlay" id="scratcher"></canvas>
             </div>
             <div id="poem" class="poem" style="display:none">L'énigme n'est pas encore résolue... Patience.</div>
         </section>
@@ -214,18 +207,28 @@
             const revealImage = document.getElementById('reveal-image');
             const revealText = document.getElementById('reveal-text');
             const poem = document.getElementById('poem');
-            const finalBtn = document.getElementById('unlock-btn');
-            const input = document.getElementById('final-key');
-            const secretArea = document.getElementById('secret-area');
+            const secretArea = document.getElementById('scratch-section') || document.getElementById('secret-area');
 
-            // Final key is 'amour' (case-insensitive). Change as needed.
-            const FINAL_KEY = 'amour';
-
-            // Target reveal date/time: 06/08/2026 à 22:00 (dd/mm/yyyy)
-            const TARGET_REVEAL = new Date(2026, 7, 6, 22, 0, 0); // month index 7 = août
+            // Target (obfuscated): reconstructed at runtime to avoid a plain-text date in source
+            let _targetReveal = null;
+            function getTargetReveal(){
+                if(_targetReveal) return _targetReveal;
+                // obfuscated fragments (non-obvious integers)
+                const a = [4050, 15];
+                const b = [13, 103];
+                const c = [0, 0];
+                // offsets hidden as expressions to deter casual searching
+                const offsets = [ (2000 + 24), (10 - 3), (20 - 13), (9 * 9), 0, 0 ];
+                const ob = a.concat(b, c);
+                const vals = ob.map((v,i) => v - offsets[i]);
+                // vals -> [year, month, day, hour, minute, second]
+                _targetReveal = new Date(vals[0], vals[1] - 1, vals[2], vals[3], vals[4] || 0, vals[5] || 0);
+                return _targetReveal;
+            }
 
             function updateRevealContent(){
                 const now = new Date();
+                const TARGET_REVEAL = getTargetReveal();
                 if(now >= TARGET_REVEAL){
                     revealImage.style.display = 'none';
                     revealText.style.display = 'block';
@@ -238,16 +241,6 @@
 
             // initial update + periodic check (toutes les 30s)
             updateRevealContent(); setInterval(updateRevealContent, 30*1000);
-
-            finalBtn.addEventListener('click', ()=>{
-                const val = input.value.trim().toLowerCase();
-                if(val === FINAL_KEY){
-                    poem.style.display='none';
-                    setupCanvas();
-                } else {
-                    poem.style.display='block';
-                }
-            });
 
             function setupCanvas(){
                 function resize(){
