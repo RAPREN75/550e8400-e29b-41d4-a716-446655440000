@@ -3,64 +3,237 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Espace Sécurisé</title>
+    <title>Espace Sécurisé — L'Écrin des Rendez-vous du 5</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
-        body { 
-            background: #000; 
-            color: #0f0; 
-            font-family: 'Courier New', monospace; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-            margin: 0; 
-            text-align: center;
+        :root{
+            --mauve-1: #2b0b2f;
+            --mauve-2: #3b0f4a;
+            --violet-deep: #190824;
+            --emerald: #00c38a;
+            --electric-blue: #00a8ff;
+            --mustard: #d4a017;
+            --text: #efe9ff;
+            --muted: rgba(255,255,255,0.14);
         }
-        #secret-content { display: none; padding: 20px; }
+        html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial,sans-serif;color:var(--text);}
+        body{
+            background: linear-gradient(160deg,var(--mauve-1) 10%, var(--mauve-2) 60%, var(--violet-deep) 100%);
+            display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:20px;padding:36px 18px;overflow-x:hidden;
+            transition:opacity .9s ease, transform .6s ease;opacity:0;transform:translateY(6px);
+        }
+        body.visible{opacity:1;transform:none}
+        header{width:100%;max-width:1100px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+        .brand{display:flex;flex-direction:column}
+        .brand h2{font-family:'Playfair Display',serif;margin:0;font-weight:600;letter-spacing:0.2em;font-size:26px;color:var(--text)}
+        .counter{font-size:13px;color:var(--muted);}
+
+        main{width:100%;max-width:1100px}
+
+        /* Timeline */
+        .timeline{display:flex;align-items:center;gap:18px;padding:26px 12px;overflow:auto}
+        .bubble{min-width:120px;height:120px;border-radius:60px;background:rgba(255,255,255,0.03);display:flex;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(4px);position:relative;cursor:pointer;transition:transform .25s ease,box-shadow .25s ease}
+        .bubble img{width:80px;height:80px;border-radius:50%;object-fit:cover;box-shadow:0 3px 10px rgba(0,0,0,0.5)}
+        .bubble p{margin:6px 0 0;font-size:13px;color:var(--muted)}
+        .bubble.past{filter:grayscale(0.3);opacity:0.9}
+        .bubble.current{box-shadow:0 0 24px rgba(0,195,138,0.18);border:2px solid rgba(0,195,138,0.12);transform:scale(1.06)}
+        .bubble.future{filter:grayscale(1);opacity:0.5}
+        .bubble .lock{position:absolute;right:8px;top:8px;color:var(--mustard);font-weight:700}
+
+        /* Secret section */
+        #secret-section{margin-top:48px;padding:28px;border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,0.02),transparent);display:flex;flex-direction:column;gap:16px}
+        #secret-section h3{font-family:'Playfair Display',serif;margin:0;font-size:20px}
+        .key-row{display:flex;gap:10px;align-items:center}
+        .key-row input{flex:1;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:var(--text);outline:none}
+        .key-row button{padding:10px 14px;border-radius:8px;border:none;background:var(--mustard);color:#1a1110;font-weight:600;cursor:pointer;transition:filter .15s}
+        .key-row button:hover{filter:brightness(1.06)}
+
+        /* Scratch card */
+        .scratch-wrap{position:relative;width:100%;max-width:720px;height:320px;margin-top:12px;border-radius:12px;overflow:hidden}
+        .reveal{position:absolute;inset:0;background:linear-gradient(180deg,#3b0f4a,#2b0b2f);display:flex;align-items:center;justify-content:center;padding:24px;text-align:center}
+        .reveal h1{font-family:'Playfair Display',serif;font-size:28px;margin:0;color:var(--text)}
+        .overlay{position:absolute;inset:0;background:linear-gradient(90deg,#c9a94b,#f3d98a);display:block;cursor:crosshair}
+        .poem{color:var(--muted);font-size:15px}
+
+        /* Micro-interactions */
+        .bubble:hover{transform:translateY(-6px);box-shadow:0 18px 40px rgba(0,0,0,0.45)}
+
+        @media (max-width:700px){.bubble{min-width:92px;height:92px;border-radius:46px}.reveal h1{font-size:20px;height:auto}}
     </style>
 </head>
 <body>
 
+    <header>
+        <div class="brand">
+            <h2>Notre Histoire</h2>
+            <div class="counter" id="meet-counter" data-meet-date="2020-06-05">Depuis notre rencontre : —</div>
+        </div>
+        <div style="text-align:right;font-size:13px;color:var(--muted)">L'Écrin des Rendez-vous du 5</div>
+    </header>
+
+    <main>
+        <section aria-label="Les Rendez-vous du 5" class="timeline" id="timeline">
+            <!-- Exemple de bulles. Remplacez les src par vos images réelles -->
+            <div class="bubble past" data-date="2023-05-05">
+                <img src="https://picsum.photos/seed/1/200" alt="photo 1">
+                <p>Mai — Bal au clair</p>
+            </div>
+            <div class="bubble past" data-date="2023-06-05">
+                <img src="https://picsum.photos/seed/2/200" alt="photo 2">
+                <p>Juin — Promenade</p>
+            </div>
+            <div class="bubble current" data-date="2024-01-05">
+                <img src="https://picsum.photos/seed/3/200" alt="photo courante">
+                <p>Aujourd'hui — Le 5</p>
+            </div>
+            <div class="bubble future" data-date="2025-02-05">
+                <div class="lock">🔒</div>
+                <img src="https://picsum.photos/seed/4/200" alt="photo future">
+                <p>Fév — Verrouillé</p>
+            </div>
+            <div class="bubble future" data-date="2025-03-05">
+                <div class="lock">🔒</div>
+                <img src="https://picsum.photos/seed/5/200" alt="photo future">
+                <p>Mars — Verrouillé</p>
+            </div>
+        </section>
+
+        <section id="secret-section" aria-labelledby="mystere">
+            <h3 id="mystere">Le Mystère du 5</h3>
+            <div class="key-row">
+                <input id="final-key" placeholder="Entrez la clé finale" aria-label="Entrez la clé finale">
+                <button id="unlock-btn">Valider</button>
+            </div>
+            <div id="secret-area" style="display:none">
+                <div class="scratch-wrap">
+                    <div class="reveal" id="reveal">
+                        <h1 id="reveal-text">Veux-tu m'épouser ?</h1>
+                    </div>
+                    <canvas class="overlay" id="scratcher"></canvas>
+                </div>
+            </div>
+            <div id="poem" class="poem" style="display:none">L'énigme n'est pas encore résolue... Patience.</div>
+        </section>
+    </main>
+
     <div id="status">🔒 Système de vérification actif...</div>
 
-    <div id="secret-content">
-        <h1>[ ACCÈS CONFIRMÉ ]</h1>
-        <p>Bienvenue dans votre répertoire secret.</p>
-        <div style="border: 1px solid #0f0; padding: 15px; margin-top: 20px;">
-            <p>Le mot de passe utilisé était correct.</p>
-        </div>
-    </div>
-
     <script>
-        // Ce hash est le standard universel pour "wapiti" (minuscule)
+        // Conservons l'accès initial (clé 'wapiti' déjà en SHA-256)
         const HASH_ATTENDU = "561f2d42ea28b8e600dcd1fe3fb9ace2739907331487f00fdba6196806606c42";
 
-        function verifier() {
+        function verifier(){
             const mdpSaisi = prompt("Veuillez entrer la clé d'accès :");
-
-            if (!mdpSaisi) {
-                window.location.href = "https://www.google.com";
-                return;
-            }
-
-            // 1. .trim() enlève les espaces
-            // 2. .toLowerCase() transforme tout en minuscules pour éviter les erreurs de frappe
-            // 3. On calcule le hash du résultat
+            if(!mdpSaisi){ window.location.href = "https://www.google.com"; return; }
             const motNettoye = mdpSaisi.trim().toLowerCase();
             const hashSaisie = CryptoJS.SHA256(motNettoye).toString().toLowerCase();
-
-            if (hashSaisie === HASH_ATTENDU) {
-                document.getElementById('status').style.display = 'none';
-                document.getElementById('secret-content').style.display = 'block';
-                document.body.style.background = "#1a1a1a";
-            } else {
-                alert("Clé invalide.");
-                window.location.href = "https://www.google.com";
-            }
+            if(hashSaisie === HASH_ATTENDU){
+                document.getElementById('status').style.display='none';
+                document.body.classList.add('visible');
+                // reveal main content is already visible by default; keep 'secret' hidden until final key
+            } else { alert('Clé invalide.'); window.location.href = 'https://www.google.com'; }
         }
 
-        window.onload = verifier;
+        window.onload = () => {
+            verifier();
+            startCounter();
+            initParallax();
+            initScratch();
+        };
+
+        // Counter depuis la date de rencontre (data attribute)
+        function startCounter(){
+            const el = document.getElementById('meet-counter');
+            const d = new Date(el.dataset.meetDate || new Date());
+            function update(){
+                const now = new Date();
+                const diff = Math.floor((now - d) / (1000*60*60*24));
+                const years = Math.floor(diff/365);
+                const days = diff - years*365;
+                el.textContent = `Depuis notre rencontre : ${years} ans et ${days} jours`;
+            }
+            update(); setInterval(update,60*1000);
+        }
+
+        // Parallaxe simple: translate images slightly on scroll
+        function initParallax(){
+            const timeline = document.getElementById('timeline');
+            timeline.addEventListener('scroll', e => {
+                const bubbles = timeline.querySelectorAll('.bubble img');
+                bubbles.forEach((img,i) => {
+                    const rect = img.getBoundingClientRect();
+                    const shift = (rect.top - window.innerHeight/2) * 0.02;
+                    img.style.transform = `translateY(${shift}px)`;
+                });
+            });
+        }
+
+        // Scratch card implementation
+        function initScratch(){
+            const canvas = document.getElementById('scratcher');
+            const wrap = canvas.parentElement;
+            const revealBox = document.getElementById('secret-area');
+            const poem = document.getElementById('poem');
+            const finalBtn = document.getElementById('unlock-btn');
+            const input = document.getElementById('final-key');
+            const secretArea = document.getElementById('secret-area');
+
+            // Final key is 'amour' (case-insensitive). Change as needed.
+            const FINAL_KEY = 'amour';
+
+            finalBtn.addEventListener('click', ()=>{
+                const val = input.value.trim().toLowerCase();
+                if(val === FINAL_KEY){
+                    poem.style.display='none';
+                    secretArea.style.display='block';
+                    setupCanvas();
+                } else {
+                    poem.style.display='block';
+                    secretArea.style.display='none';
+                }
+            });
+
+            function setupCanvas(){
+                canvas.width = wrap.clientWidth;
+                canvas.height = wrap.clientHeight;
+                const ctx = canvas.getContext('2d');
+                // Draw golden overlay
+                const g = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
+                g.addColorStop(0,'#d4a017'); g.addColorStop(1,'#f3d98a');
+                ctx.fillStyle = g; ctx.fillRect(0,0,canvas.width,canvas.height);
+                ctx.globalCompositeOperation = 'destination-out';
+
+                let drawing=false;
+                function down(e){drawing=true; draw(e);} 
+                function up(){drawing=false; checkClear();}
+                function move(e){ if(drawing) draw(e); }
+
+                function getPos(e){
+                    const r = canvas.getBoundingClientRect();
+                    const x = (e.touches?e.touches[0].clientX:e.clientX) - r.left;
+                    const y = (e.touches?e.touches[0].clientY:e.clientY) - r.top;
+                    return {x,y};
+                }
+                function draw(e){
+                    const p = getPos(e);
+                    ctx.beginPath(); ctx.arc(p.x,p.y,26,0,Math.PI*2); ctx.fill();
+                }
+
+                canvas.addEventListener('mousedown',down); canvas.addEventListener('touchstart',down);
+                window.addEventListener('mouseup',up); canvas.addEventListener('touchend',up);
+                canvas.addEventListener('mousemove',move); canvas.addEventListener('touchmove',move);
+
+                function checkClear(){
+                    const imgData = ctx.getImageData(0,0,canvas.width,canvas.height).data;
+                    let cleared=0; for(let i=3;i<imgData.length;i+=4){ if(imgData[i]===0) cleared++; }
+                    const pct = cleared / (canvas.width*canvas.height) ;
+                    if(pct > 0.25){ // 25% cleared
+                        canvas.style.transition='opacity .6s'; canvas.style.opacity='0'; setTimeout(()=>canvas.style.display='none',700);
+                    }
+                }
+            }
+        }
     </script>
 
 </body>
