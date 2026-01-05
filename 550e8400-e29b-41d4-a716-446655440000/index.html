@@ -32,9 +32,10 @@
         main{width:100%;max-width:1100px}
 
         /* Timeline */
-        .timeline{display:flex;align-items:center;gap:18px;padding:26px 12px;overflow:auto}
-        .bubble{min-width:120px;height:120px;border-radius:60px;background:rgba(255,255,255,0.03);display:flex;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(4px);position:relative;cursor:pointer;transition:transform .25s ease,box-shadow .25s ease}
-        .bubble img{width:80px;height:80px;border-radius:50%;object-fit:cover;box-shadow:0 3px 10px rgba(0,0,0,0.5)}
+        .timeline{display:flex;flex-wrap:wrap;align-items:flex-start;gap:18px;padding:26px 12px;overflow:visible;justify-content:flex-start}
+        .timeline{display:flex;flex-wrap:wrap;align-items:flex-start;gap:18px;padding:26px 12px;overflow:visible;justify-content:center}
+        .bubble{width:120px;height:120px;border-radius:16px;background:rgba(255,255,255,0.03);display:flex;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(4px);position:relative;cursor:pointer;transition:transform .25s ease,box-shadow .25s ease}
+        .bubble img{width:100%;height:72px;border-radius:10px;object-fit:cover;box-shadow:0 3px 10px rgba(0,0,0,0.5)}
         .bubble p{margin:6px 0 0;font-size:13px;color:var(--muted)}
         .bubble.past{filter:grayscale(0.3);opacity:0.9}
         .bubble.current{box-shadow:0 0 24px rgba(0,195,138,0.18);border:2px solid rgba(0,195,138,0.12);transform:scale(1.06)}
@@ -59,7 +60,7 @@
         /* Micro-interactions */
         .bubble:hover{transform:translateY(-6px);box-shadow:0 18px 40px rgba(0,0,0,0.45)}
 
-        @media (max-width:700px){.bubble{min-width:92px;height:92px;border-radius:46px}.reveal h1{font-size:20px;height:auto}}
+        @media (max-width:900px){.bubble{width:92px;height:92px;border-radius:12px}.reveal h1{font-size:20px;height:auto}}
     </style>
 </head>
 <body>
@@ -67,7 +68,7 @@
     <header>
         <div class="brand">
             <h2>Notre Histoire</h2>
-            <div class="counter" id="meet-counter" data-meet-date="2020-06-05">Depuis notre rencontre : —</div>
+            <div class="counter" id="meet-counter" data-meet-date="2023-08-05">Depuis notre rencontre : —</div>
         </div>
         <div style="text-align:right;font-size:13px;color:var(--muted)">L'Écrin des Rendez-vous du 5</div>
     </header>
