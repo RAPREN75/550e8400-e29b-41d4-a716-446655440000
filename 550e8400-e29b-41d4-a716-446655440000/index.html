@@ -144,6 +144,17 @@
         const HASH_ATTENDU = "561f2d42ea28b8e600dcd1fe3fb9ace2739907331487f00fdba6196806606c42";
 
         function verifier(){
+            // If a valid auth token is stored, accept it and skip prompting.
+            try{
+                const stored = localStorage.getItem('rendezvous-auth') || sessionStorage.getItem('rendezvous-auth');
+                if(stored && stored.toLowerCase() === HASH_ATTENDU.toLowerCase()){
+                    document.getElementById('status').style.display='none';
+                    document.body.classList.add('visible');
+                    return;
+                }
+            }catch(e){ /* storage might be blocked */ }
+
+            // Otherwise ask once and store the successful hash for the session/local browsing.
             const mdpSaisi = prompt("Veuillez entrer la clé d'accès :");
             if(!mdpSaisi){ window.location.href = "https://www.google.com"; return; }
             const motNettoye = mdpSaisi.trim().toLowerCase();
@@ -152,7 +163,6 @@
                     document.getElementById('status').style.display='none';
                     document.body.classList.add('visible');
                     try{ localStorage.setItem('rendezvous-auth', HASH_ATTENDU); sessionStorage.setItem('rendezvous-auth', HASH_ATTENDU); }catch(e){}
-                // reveal main content is already visible by default; keep 'secret' hidden until final key
             } else { alert('Clé invalide.'); window.location.href = 'https://www.google.com'; }
         }
 

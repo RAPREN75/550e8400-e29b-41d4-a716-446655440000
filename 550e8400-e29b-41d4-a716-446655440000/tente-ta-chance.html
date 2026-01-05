@@ -30,16 +30,19 @@
 <body>
     <div class="container">
         <a class="back-link" href="index.html">← Retour</a>
-        <h2 style="font-family:'Playfair Display',serif;margin:6px 0 12px">Tentes ta chance</h2>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+            <h2 style="font-family:'Playfair Display',serif;margin:6px 0 0">Tentes ta chance</h2>
+            <button id="auto-scratch" style="margin-left:auto;padding:8px 12px;border-radius:8px;border:none;background:var(--mustard);color:#1a1110;font-weight:600;cursor:pointer">Grattage automatique</button>
+        </div>
         <div class="scratch-wrap" id="lux-scratch">
             <div class="reveal" id="reveal">
-                <img id="reveal-image" src="https://via.placeholder.com/820x380.png?text=Dommage,+pas+maintenant+!" alt="Dommage, pas maintenant !" style="width:100%;height:100%;object-fit:cover;border-radius:6px;filter:blur(6px);transition:filter .3s ease">
-                <h1 id="reveal-text" style="display:block;position:absolute;z-index:0;margin:0;font-family:'Playfair Display',serif;font-size:32px;color:rgba(255,241,200,0.95);text-shadow:0 2px 8px rgba(0,0,0,0.6);filter:blur(6px);transition:filter .3s ease;pointer-events:none">Veux-tu m'épouser ?</h1>
+                <img id="reveal-image" src="https://via.placeholder.com/820x380.png?text=Dommage,+pas+maintenant+!" alt="Dommage, pas maintenant !" style="width:100%;height:100%;object-fit:cover;border-radius:6px;filter:blur(6px);transition:filter .3s ease;position:relative;z-index:1">
+                <h1 id="reveal-text" style="display:block;position:absolute;z-index:2;margin:0;font-family:'Playfair Display',serif;font-size:32px;color:rgba(255,241,200,0.95);text-shadow:0 2px 8px rgba(0,0,0,0.6);filter:blur(6px);transition:filter .3s ease;pointer-events:none">Veux-tu m'épouser ?</h1>
             </div>
             <!-- canvas pour couche à gratter -->
-            <canvas class="overlay" id="scratcher"></canvas>
+            <canvas class="overlay" id="scratcher" style="position:absolute;inset:0;z-index:3"></canvas>
             <!-- canvas pour particules -->
-            <canvas id="particles" style="position:absolute;inset:0;pointer-events:none"></canvas>
+            <canvas id="particles" style="position:absolute;inset:0;pointer-events:none;z-index:4"></canvas>
         </div>
     </div>
 
@@ -160,6 +163,33 @@
                 canvas.addEventListener('touchmove', e=>{ pointerMove(e.touches[0]); }, {passive:false});
                 window.addEventListener('resize', resize);
             }
+
+            // Auto-scratch implementation
+            const autoBtn = document.getElementById('auto-scratch');
+            let autoInterval = null;
+            function autoScratch(duration = 2000){
+                // simulate many small scratch strokes across the canvas over `duration` ms
+                const steps = Math.max(30, Math.floor(duration / 16));
+                let count = 0;
+                autoBtn.disabled = true; autoBtn.style.opacity = '0.7';
+                autoInterval = setInterval(()=>{
+                    // draw several strokes per tick for speed
+                    const w = canvas.width, h = canvas.height;
+                    for(let s=0;s<6;s++){
+                        // spiral-like pattern from center outward
+                        const t = (count*6 + s) / steps;
+                        const angle = t * Math.PI * 8;
+                        const radius = Math.min(w,h) * (t*0.6 + Math.random()*0.02);
+                        const x = w/2 + Math.cos(angle) * radius + (Math.random()-0.5)*30;
+                        const y = h/2 + Math.sin(angle) * radius + (Math.random()-0.5)*20;
+                        drawAt(x,y, 28 + Math.random()*8);
+                    }
+                    count++;
+                    if(count >= steps){ clearInterval(autoInterval); autoInterval = null; autoBtn.disabled=false; autoBtn.style.opacity='1'; checkClear(); }
+                }, Math.max(8, Math.floor(duration/steps)) );
+            }
+
+            autoBtn.addEventListener('click', ()=> autoScratch(2000));
 
             // start
             resize(); updateParticles(); addListeners();
