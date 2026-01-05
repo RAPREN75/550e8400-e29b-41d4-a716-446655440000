@@ -34,8 +34,10 @@
         /* Timeline */
         .timeline{display:flex;flex-wrap:wrap;align-items:flex-start;gap:18px;padding:26px 12px;overflow:visible;justify-content:flex-start}
         .timeline{display:flex;flex-wrap:wrap;align-items:flex-start;gap:18px;padding:26px 12px;overflow:visible;justify-content:center}
-        .bubble{width:120px;height:120px;border-radius:16px;background:rgba(255,255,255,0.03);display:flex;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(4px);position:relative;cursor:pointer;transition:transform .25s ease,box-shadow .25s ease}
-        .bubble img{width:100%;height:72px;border-radius:10px;object-fit:cover;box-shadow:0 3px 10px rgba(0,0,0,0.5)}
+        .bubble{width:120px;height:120px;border-radius:16px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.05));display:flex;flex-direction:column;align-items:center;justify-content:center;backdrop-filter:blur(6px);position:relative;cursor:pointer;transition:transform .25s ease,box-shadow .25s ease;border:1px solid rgba(255,255,255,0.03)}
+        .bubble .month-label{font-size:13px;color:var(--muted);margin-top:8px}
+        .bubble .lock-icon{font-size:28px;color:var(--mustard);}
+        .bubble img{display:none}
         .bubble p{margin:6px 0 0;font-size:13px;color:var(--muted)}
         .bubble.past{filter:grayscale(0.3);opacity:0.9}
         .bubble.current{box-shadow:0 0 24px rgba(0,195,138,0.18);border:2px solid rgba(0,195,138,0.12);transform:scale(1.06)}
@@ -93,15 +95,34 @@
                     a.id = id;
                     a.href = href;
                     a.className = 'bubble';
-                    if(today.getFullYear()===year && today.getMonth()+1===m && today.getDate()===5){
-                        a.classList.add('current');
-                    } else if(today >= unlockDate){
-                        a.classList.add('past');
-                    } else {
-                        a.classList.add('future');
-                    }
+                    if(today.getFullYear()===year && today.getMonth()+1===m && today.getDate()===5){ a.classList.add('current'); }
+                    else if(today >= unlockDate){ a.classList.add('past'); }
+                    else { a.classList.add('future'); }
                     const seed = encodeURIComponent(`${year}-${m}`);
-                    a.innerHTML = `<img src="https://picsum.photos/seed/${seed}/200" alt="${monthNames[m-1]}"><p>${monthNames[m-1]}</p>`;
+                    if(today >= unlockDate){
+                        a.innerHTML = `<div class="month-label">${monthNames[m-1]}</div>`;
+                    } else {
+                        a.innerHTML = `<div class="lock-icon">🔒</div>`;
+                    }
+                    a.dataset.unlock = unlockDate.toISOString();
+                    a.dataset.href = href;
+                    a.addEventListener('click', function(e){
+                        e.preventDefault();
+                        const unlock = new Date(a.dataset.unlock);
+                        const now = new Date();
+                        if(now < unlock){
+                            a.animate([{transform:'scale(1)'},{transform:'scale(0.96)'},{transform:'scale(1)'}],{duration:220});
+                            return;
+                        }
+                        const stored = (localStorage.getItem('rendezvous-auth') || sessionStorage.getItem('rendezvous-auth'));
+                        if(stored && stored.length>10){ window.location.href = a.dataset.href; return; }
+                        const attempt = prompt('Entrez la clé d\'accès pour ouvrir cette étape :');
+                        if(!attempt) return;
+                        const h = CryptoJS.SHA256(attempt.trim().toLowerCase()).toString().toLowerCase();
+                        const HASH_EXPECTED = '561f2d42ea28b8e600dcd1fe3fb9ace2739907331487f00fdba6196806606c42';
+                        if(h === HASH_EXPECTED){ try{ localStorage.setItem('rendezvous-auth', HASH_EXPECTED); sessionStorage.setItem('rendezvous-auth', HASH_EXPECTED);}catch(e){}; window.location.href = a.dataset.href; }
+                        else { alert('Clé invalide.'); }
+                    });
                     timeline.appendChild(a);
                 }
             })();

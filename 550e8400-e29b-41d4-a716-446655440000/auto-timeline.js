@@ -73,7 +73,8 @@
       background: 'linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.6))', color: '#d4a017',
       fontSize: '16px', textAlign: 'center', padding: '12px', boxSizing: 'border-box', zIndex: '999'
     });
-    overlay.innerHTML = `<div style="max-width:90%"><div style="font-size:26px;margin-bottom:6px">🔒</div><div>${text}</div></div>`;
+    // Only show a discreet lock icon on locked items (no text)
+    overlay.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%"><div style="font-size:28px;color:#d4a017">🔒</div></div>`;
     el.appendChild(overlay);
     el._autoTimelineOverlay = overlay;
   }
