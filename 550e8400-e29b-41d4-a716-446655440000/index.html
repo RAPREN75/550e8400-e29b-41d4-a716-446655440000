@@ -138,10 +138,13 @@
                 <input id="final-key" placeholder="Entrez la clé finale" aria-label="Entrez la clé finale">
                 <button id="unlock-btn">Valider</button>
             </div>
-            <div id="secret-area" style="display:none">
+            <!-- Le secret est toujours visible: le grattage révèle soit une image 'Dommage, pas maintenant !',
+                 soit, à partir de la date cible (06/08/2026 22:00), le texte de la demande. -->
+            <div id="secret-area" style="display:block">
                 <div class="scratch-wrap">
                     <div class="reveal" id="reveal">
-                        <h1 id="reveal-text">Veux-tu m'épouser ?</h1>
+                        <img id="reveal-image" src="https://via.placeholder.com/720x320.png?text=Dommage,+pas+maintenant+!" alt="Dommage, pas maintenant !" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
+                        <h1 id="reveal-text" style="display:none;margin:0;font-family:'Playfair Display',serif;font-size:28px;color:var(--text)">Veux-tu m'épouser ?</h1>
                     </div>
                     <canvas class="overlay" id="scratcher"></canvas>
                 </div>
@@ -207,7 +210,9 @@
         function initScratch(){
             const canvas = document.getElementById('scratcher');
             const wrap = canvas.parentElement;
-            const revealBox = document.getElementById('secret-area');
+            const revealBox = document.getElementById('reveal');
+            const revealImage = document.getElementById('reveal-image');
+            const revealText = document.getElementById('reveal-text');
             const poem = document.getElementById('poem');
             const finalBtn = document.getElementById('unlock-btn');
             const input = document.getElementById('final-key');
@@ -216,27 +221,52 @@
             // Final key is 'amour' (case-insensitive). Change as needed.
             const FINAL_KEY = 'amour';
 
+            // Target reveal date/time: 06/08/2026 à 22:00 (dd/mm/yyyy)
+            const TARGET_REVEAL = new Date(2026, 7, 6, 22, 0, 0); // month index 7 = août
+
+            function updateRevealContent(){
+                const now = new Date();
+                if(now >= TARGET_REVEAL){
+                    revealImage.style.display = 'none';
+                    revealText.style.display = 'block';
+                    revealText.textContent = "Veux-tu m'épouser ?";
+                } else {
+                    revealImage.style.display = 'block';
+                    revealText.style.display = 'none';
+                }
+            }
+
+            // initial update + periodic check (toutes les 30s)
+            updateRevealContent(); setInterval(updateRevealContent, 30*1000);
+
             finalBtn.addEventListener('click', ()=>{
                 const val = input.value.trim().toLowerCase();
                 if(val === FINAL_KEY){
                     poem.style.display='none';
-                    secretArea.style.display='block';
                     setupCanvas();
                 } else {
                     poem.style.display='block';
-                    secretArea.style.display='none';
                 }
             });
 
             function setupCanvas(){
-                canvas.width = wrap.clientWidth;
-                canvas.height = wrap.clientHeight;
-                const ctx = canvas.getContext('2d');
-                // Draw golden overlay
-                const g = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
-                g.addColorStop(0,'#d4a017'); g.addColorStop(1,'#f3d98a');
-                ctx.fillStyle = g; ctx.fillRect(0,0,canvas.width,canvas.height);
-                ctx.globalCompositeOperation = 'destination-out';
+                function resize(){
+                    canvas.width = wrap.clientWidth;
+                    canvas.height = wrap.clientHeight;
+                    drawOverlay();
+                }
+                function drawOverlay(){
+                    const ctx = canvas.getContext('2d');
+                    ctx.globalCompositeOperation = 'source-over';
+                    // Draw golden overlay
+                    const g = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
+                    g.addColorStop(0,'#d4a017'); g.addColorStop(1,'#f3d98a');
+                    ctx.fillStyle = g; ctx.fillRect(0,0,canvas.width,canvas.height);
+                    ctx.globalCompositeOperation = 'destination-out';
+                }
+
+                resize();
+                window.addEventListener('resize', resize);
 
                 let drawing=false;
                 function down(e){drawing=true; draw(e);} 
@@ -250,6 +280,7 @@
                     return {x,y};
                 }
                 function draw(e){
+                    const ctx = canvas.getContext('2d');
                     const p = getPos(e);
                     ctx.beginPath(); ctx.arc(p.x,p.y,26,0,Math.PI*2); ctx.fill();
                 }
@@ -259,14 +290,20 @@
                 canvas.addEventListener('mousemove',move); canvas.addEventListener('touchmove',move);
 
                 function checkClear(){
-                    const imgData = ctx.getImageData(0,0,canvas.width,canvas.height).data;
-                    let cleared=0; for(let i=3;i<imgData.length;i+=4){ if(imgData[i]===0) cleared++; }
-                    const pct = cleared / (canvas.width*canvas.height) ;
-                    if(pct > 0.25){ // 25% cleared
-                        canvas.style.transition='opacity .6s'; canvas.style.opacity='0'; setTimeout(()=>canvas.style.display='none',700);
-                    }
+                    try{
+                        const ctx = canvas.getContext('2d');
+                        const imgData = ctx.getImageData(0,0,canvas.width,canvas.height).data;
+                        let cleared=0; for(let i=3;i<imgData.length;i+=4){ if(imgData[i]===0) cleared++; }
+                        const pct = cleared / (canvas.width*canvas.height) ;
+                        if(pct > 0.25){ // 25% cleared
+                            canvas.style.transition='opacity .6s'; canvas.style.opacity='0'; setTimeout(()=>canvas.style.display='none',700);
+                        }
+                    }catch(e){ /* guard for cross-origin or small canvases */ }
                 }
             }
+
+            // Initialize canvas immediately so user can gratter dès maintenant
+            setupCanvas();
         }
     </script>
 
