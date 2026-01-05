@@ -18,50 +18,45 @@
             text-align: center;
         }
         #secret-content { display: none; padding: 20px; }
-        .error-msg { color: red; }
     </style>
 </head>
 <body>
 
-    <div id="status">🔒 Cryptage SHA-256 actif. Vérification en cours...</div>
+    <div id="status">🔒 Système de vérification actif...</div>
 
     <div id="secret-content">
         <h1>[ ACCÈS CONFIRMÉ ]</h1>
         <p>Bienvenue dans votre répertoire secret.</p>
         <div style="border: 1px solid #0f0; padding: 15px; margin-top: 20px;">
-            <p>Le mot de passe utilisé était bien :</p>
+            <p>Le mot de passe utilisé était correct.</p>
         </div>
     </div>
 
     <script>
-        // Le hash ci-dessous correspond exactement à
-        const HASH_ATTENDU = "9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08";
+        // (impératif pour la comparaison)
+        const HASH_ATTENDU = "89270830491023a9d70195159392e62233633d455d3e02809059f3d64c0e648f";
 
         function verifier() {
             const mdpSaisi = prompt("Veuillez entrer la clé d'accès :");
 
             if (!mdpSaisi) {
-                // Si l'utilisateur annule ou laisse vide
                 window.location.href = "https://www.google.com";
                 return;
             }
 
-            // Calcul du hash de la saisie (on retire les espaces invisibles avec .trim())
-            const hashSaisie = CryptoJS.SHA256(mdpSaisi.trim()).toString();
+            // On calcule le hash et on force le résultat en minuscules (.toLowerCase())
+            const hashSaisie = CryptoJS.SHA256(mdpSaisi.trim()).toString().toLowerCase();
 
             if (hashSaisie === HASH_ATTENDU) {
-                // Succès
                 document.getElementById('status').style.display = 'none';
                 document.getElementById('secret-content').style.display = 'block';
                 document.body.style.background = "#1a1a1a";
             } else {
-                // Échec
                 alert("Clé invalide. Redirection...");
                 window.location.href = "https://www.google.com";
             }
         }
 
-        // On lance la vérification dès que la page est chargée
         window.onload = verifier;
     </script>
 </body>
