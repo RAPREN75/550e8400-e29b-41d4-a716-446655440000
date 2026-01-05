@@ -37,12 +37,35 @@
 
   function addLockedMessageToPage(msg){
     const body = document.body;
+    // remove existing overlay if any
+    const existing = document.getElementById('rendezvous-locked-overlay');
+    if(existing) return;
     const overlay = document.createElement('div');
-    overlay.style.position = 'fixed'; overlay.style.inset = '0'; overlay.style.display='flex';
-    overlay.style.alignItems='center'; overlay.style.justifyContent='center'; overlay.style.zIndex='9999';
-    overlay.style.background = 'linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.8))';
-    overlay.innerHTML = `<div style="color:#d4a017;font-family:Inter,Arial,sans-serif;text-align:center;padding:20px;background:rgba(0,0,0,0.35);border-radius:10px;max-width:90%">${msg}</div>`;
-    body.appendChild(overlay);
+    overlay.id = 'rendezvous-locked-overlay';
+    overlay.setAttribute('role','alert');
+    overlay.style.position = 'fixed';
+    overlay.style.inset = '0';
+    overlay.style.display = 'flex';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+    overlay.style.zIndex = '2147483647';
+    overlay.style.background = 'rgba(2,2,2,0.96)';
+    overlay.style.backdropFilter = 'blur(6px)';
+    overlay.style.color = '#d4a017';
+    overlay.style.fontFamily = 'Inter, Arial, sans-serif';
+    overlay.style.textAlign = 'center';
+    overlay.style.padding = '20px';
+    overlay.style.pointerEvents = 'auto';
+    overlay.style.overflow = 'hidden';
+    overlay.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:12px;max-width:90%;">
+        <div style="font-size:44px;line-height:1">🔒</div>
+        <div style="color:#f3d98a;font-size:18px;font-weight:600">Contenu non disponible</div>
+      </div>
+    `;
+    // prevent page interaction/scroll
+    document.documentElement.style.overflow = 'hidden';
+    document.body.appendChild(overlay);
   }
 
   async function promptForPasswordAndVerify(){
