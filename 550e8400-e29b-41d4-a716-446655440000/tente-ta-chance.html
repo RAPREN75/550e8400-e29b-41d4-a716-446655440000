@@ -116,6 +116,31 @@
                 return _targetReveal;
             }
 
+            // helper: are we at or past the reveal date?
+            function isRevealDatePassed(){
+                const now = new Date();
+                return now >= getTargetReveal();
+            }
+
+            // show/hide reveal image vs reveal text depending on the date
+            function updateRevealVisibility(){
+                if(isRevealDatePassed()){
+                    // show final text image on top
+                    revealText.style.display = 'block';
+                    revealText.style.visibility = 'visible';
+                    revealText.style.opacity = '1';
+                    revealImage.style.display = 'block';
+                    revealImage.style.visibility = 'visible';
+                } else {
+                    // show placeholder image only
+                    revealText.style.display = 'none';
+                    revealText.style.visibility = 'hidden';
+                    revealText.style.opacity = '0';
+                    revealImage.style.display = 'block';
+                    revealImage.style.visibility = 'visible';
+                }
+            }
+
             function drawOverlay(){
                 const ctx = canvas.getContext('2d');
                 // clear full HiDPI canvas
@@ -194,24 +219,24 @@
                     revealImage.style.filter = `blur(${blur}px)`;
                     revealText.style.filter = `blur(${blur}px)`;
 
-                    if(pct > 0.35){ // finished enough to reveal
-                        // choose final message depending on whether we passed the target reveal date
-                        const TARGET = getTargetReveal();
-                        const now = new Date();
-                        if(now >= TARGET){
-                            revealText.textContent = "Justine C. veux-tu m'épouser ?";
-                        } else {
-                            revealText.textContent = 'Dommage, peut-être un autre jour !';
-                        }
-                        // ensure the text is fully visible and on top
-                        revealText.style.zIndex = 10;
-                        revealText.style.filter = 'blur(0px)';
-                        revealImage.style.filter = 'blur(0px)';
-                        revealText.style.opacity = '1';
-                        canvas.style.transition = 'opacity .6s';
-                        canvas.style.opacity = '0';
-                        setTimeout(()=>canvas.style.display = 'none', 700);
-                    }
+                            if(pct > 0.35){ // finished enough to reveal
+                                // toggle which reveal asset to show based on date
+                                if(isRevealDatePassed()){
+                                    // reveal the final text image
+                                    revealText.style.display = 'block';
+                                    revealText.style.zIndex = 10;
+                                    revealText.style.filter = 'blur(0px)';
+                                    revealText.style.opacity = '1';
+                                    revealImage.style.filter = 'blur(0px)';
+                                } else {
+                                    // keep showing the placeholder image with final clarity
+                                    revealText.style.display = 'none';
+                                    revealImage.style.filter = 'blur(0px)';
+                                }
+                                canvas.style.transition = 'opacity .6s';
+                                canvas.style.opacity = '0';
+                                setTimeout(()=>canvas.style.display = 'none', 700);
+                            }
                 }catch(e){ console.warn(e); }
             }
 
@@ -265,13 +290,12 @@
             if(!codeValide){
                 canvas.style.pointerEvents = 'none';
                 autoBtn.disabled = true; autoBtn.style.opacity = '0.5';
+                // still draw overlay so user sees placeholder
+                resize(); updateParticles(); updateRevealVisibility();
             } else {
                 // start interactive flows
-                resize(); updateParticles(); addListeners();
+                resize(); updateParticles(); addListeners(); updateRevealVisibility();
             }
-
-            // always ensure overlay draws to match size
-            resize(); updateParticles();
 
         })();
     </script>
