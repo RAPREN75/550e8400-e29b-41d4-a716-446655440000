@@ -131,8 +131,8 @@
                     const seed = encodeURIComponent(`${year}-${m}`);
                     if(today >= unlockDate){
                         // show image + month label for unlocked/past/current
-                        // Use the same image seed as the month page for January
-                        const imgUrl = (m === 1) ? 'https://picsum.photos/seed/couple2026-01/200/120' : `https://picsum.photos/seed/${seed}/200`;
+                        // January uses a local 'road' image to represent the path ahead
+                        const imgUrl = (m === 1) ? 'image/january-road.png' : `https://picsum.photos/seed/${seed}/200`;
                         a.innerHTML = `<img src="${imgUrl}" alt="${monthNames[m-1]}"><div class="month-label">${monthNames[m-1]}</div>`;
                     } else {
                         // future months: leave content minimal — the auto-timeline overlay will add the lock
