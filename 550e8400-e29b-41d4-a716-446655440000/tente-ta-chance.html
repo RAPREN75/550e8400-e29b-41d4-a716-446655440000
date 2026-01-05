@@ -21,7 +21,7 @@
         body{background: linear-gradient(160deg,var(--mauve-1) 10%, var(--mauve-2) 60%, var(--violet-deep) 100%);display:flex;align-items:center;justify-content:center;padding:36px;}
         .container{width:100%;max-width:820px}
         .scratch-wrap{position:relative;width:100%;height:380px;border-radius:12px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.5)}
-        .reveal{position:absolute;inset:0;background:linear-gradient(180deg,#3b0f4a,#2b0b2f);display:flex;align-items:center;justify-content:center;padding:24px;text-align:center}
+        .reveal{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,#3b0f4a,#2b0b2f);display:flex;align-items:center;justify-content:center;padding:24px;text-align:center}
         .reveal h1{font-family:'Playfair Display',serif;font-size:28px;margin:0;color:var(--text)}
         .overlay{position:absolute;inset:0;background:linear-gradient(90deg,#c9a94b,#f3d98a);display:block;cursor:crosshair}
         .back-link{display:inline-block;margin-bottom:14px;color:var(--muted);text-decoration:none}
@@ -73,11 +73,19 @@
             wrap.style.borderRadius = '12px';
             wrap.style.position = 'relative';
 
-            // sizes
+            // sizes (with devicePixelRatio handling for crisp canvas and correct coordinates)
             function resize(){
                 const w = wrap.clientWidth; const h = wrap.clientHeight;
-                canvas.width = w; canvas.height = h;
-                pCanvas.width = w; pCanvas.height = h;
+                const dpr = window.devicePixelRatio || 1;
+                // set CSS size
+                canvas.style.width = w + 'px'; canvas.style.height = h + 'px';
+                pCanvas.style.width = w + 'px'; pCanvas.style.height = h + 'px';
+                // set backing store size
+                canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+                pCanvas.width = Math.round(w * dpr); pCanvas.height = Math.round(h * dpr);
+                // scale contexts so drawing uses CSS pixels
+                const ctx = canvas.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+                const pp = pCanvas.getContext('2d'); pp.setTransform(dpr,0,0,dpr,0,0);
                 drawOverlay();
             }
 
@@ -109,26 +117,28 @@
 
             function drawOverlay(){
                 const ctx = canvas.getContext('2d');
+                // clear full HiDPI canvas
                 ctx.clearRect(0,0,canvas.width,canvas.height);
-                // brushed-metal / gold gradient
-                const g = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
+                const rect = canvas.getBoundingClientRect();
+                // brushed-metal / gold gradient (use CSS dimensions)
+                const g = ctx.createLinearGradient(0,0, rect.width, rect.height);
                 g.addColorStop(0,'#E1AD01'); g.addColorStop(0.6,'#F3D56A'); g.addColorStop(1,'#FFEAA0');
-                ctx.fillStyle = g; ctx.fillRect(0,0,canvas.width,canvas.height);
+                ctx.fillStyle = g; ctx.fillRect(0,0, rect.width, rect.height);
 
-                // subtle grain / glitter
-                const grainCount = Math.floor((canvas.width*canvas.height)/8000);
+                // subtle grain / glitter (CSS space)
+                const grainCount = Math.floor((rect.width*rect.height)/8000);
                 ctx.fillStyle = 'rgba(255,255,255,0.06)';
-                for(let i=0;i<grainCount;i++){ const x=Math.random()*canvas.width; const y=Math.random()*canvas.height; ctx.fillRect(x, y, Math.random()*1.6, Math.random()*1.6); }
+                for(let i=0;i<grainCount;i++){ const x=Math.random()*rect.width; const y=Math.random()*rect.height; ctx.fillRect(x, y, Math.random()*1.6, Math.random()*1.6); }
 
                 // filigree pattern
-                if(!filigreePattern) filigreePattern = createFiligreePattern(canvas.width, canvas.height);
-                ctx.globalAlpha = 0.10; ctx.fillStyle = filigreePattern; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.globalAlpha = 1;
+                if(!filigreePattern) filigreePattern = createFiligreePattern(rect.width, rect.height);
+                ctx.globalAlpha = 0.10; ctx.fillStyle = filigreePattern; ctx.fillRect(0,0,rect.width,rect.height); ctx.globalAlpha = 1;
 
                 // subtle noise overlay for brushed effect
                 ctx.fillStyle = 'rgba(0,0,0,0.02)';
-                for(let i=0;i<2000;i++){ const x=Math.random()*canvas.width; const y=Math.random()*canvas.height; ctx.fillRect(x,y,Math.random()*0.8,Math.random()*0.8); }
+                for(let i=0;i<2000;i++){ const x=Math.random()*rect.width; const y=Math.random()*rect.height; ctx.fillRect(x,y,Math.random()*0.8,Math.random()*0.8); }
 
-                // prepare for erasing
+                // ensure subsequent drawing uses destination-out to erase
                 ctx.globalCompositeOperation = 'destination-out';
             }
 
@@ -146,11 +156,26 @@
 
             // drawing (erasing) and clearing detection
             function getPos(e){
-                const r = canvas.getBoundingClientRect(); const point = (e.touches && e.touches[0]) ? e.touches[0] : e; return {x: point.clientX - r.left, y: point.clientY - r.top};
+                const r = canvas.getBoundingClientRect();
+                const point = (e.touches && e.touches[0]) ? e.touches[0] : e;
+                const xCss = point.clientX - r.left;
+                const yCss = point.clientY - r.top;
+                const dpr = canvas.width / r.width;
+                return { x: xCss * dpr, y: yCss * dpr };
             }
 
             let drawing=false;
-            function drawAt(x,y,sz=28){ const ctx = canvas.getContext('2d'); ctx.beginPath(); ctx.arc(x,y,sz,0,Math.PI*2); ctx.fill(); spawnParticles(x,y); }
+            function drawAt(x,y,sz=28){
+                const ctx = canvas.getContext('2d');
+                ctx.save();
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.fillStyle = 'rgba(0,0,0,1)';
+                ctx.beginPath(); ctx.arc(x, y, sz, 0, Math.PI*2); ctx.fill();
+                ctx.restore();
+                // spawn particles in CSS pixel coords
+                const r = canvas.getBoundingClientRect(); const dpr = canvas.width / r.width;
+                spawnParticles(x / dpr, y / dpr);
+            }
 
             function pointerDown(e){ drawing=true; const p=getPos(e); drawAt(p.x,p.y,28); }
             function pointerMove(e){ if(!drawing) return; e.preventDefault(); const p=getPos(e); drawAt(p.x,p.y,28); }
@@ -227,8 +252,25 @@
 
             autoBtn.addEventListener('click', ()=> autoScratch(2000));
 
-            // start
-            resize(); updateParticles(); addListeners();
+            // gate interactivity behind the stored rendezvous key
+            const HASH_EXPECTED = '561f2d42ea28b8e600dcd1fe3fb9ace2739907331487f00fdba6196806606c42';
+            let codeValide = false;
+            try{
+                const stored = (localStorage.getItem('rendezvous-auth') || sessionStorage.getItem('rendezvous-auth') || '').toLowerCase();
+                if(stored === HASH_EXPECTED) codeValide = true;
+            }catch(e){ /* storage possibly blocked */ }
+
+            // If the code is not valid, disable interactions on the canvas and auto button
+            if(!codeValide){
+                canvas.style.pointerEvents = 'none';
+                autoBtn.disabled = true; autoBtn.style.opacity = '0.5';
+            } else {
+                // start interactive flows
+                resize(); updateParticles(); addListeners();
+            }
+
+            // always ensure overlay draws to match size
+            resize(); updateParticles();
 
         })();
     </script>

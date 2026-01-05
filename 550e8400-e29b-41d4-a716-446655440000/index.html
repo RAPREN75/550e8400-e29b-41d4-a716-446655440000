@@ -134,8 +134,8 @@
                         const imgUrl = `https://picsum.photos/seed/${seed}/200`;
                         a.innerHTML = `<img src="${imgUrl}" alt="${monthNames[m-1]}"><div class="month-label">${monthNames[m-1]}</div>`;
                     } else {
-                        // only show lock icon for future months
-                        a.innerHTML = `<div class="lock-icon">🔒</div>`;
+                        // future months: leave content minimal — the auto-timeline overlay will add the lock
+                        a.innerHTML = `<div class="month-label">${monthNames[m-1]}</div>`;
                     }
                     a.dataset.unlock = unlockDate.toISOString();
                     a.dataset.href = href;
