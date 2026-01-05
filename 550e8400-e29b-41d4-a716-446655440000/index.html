@@ -2,16 +2,45 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Espace Privé</title>
+    <title>Espace Sécurisé</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
-        body { background: #1a1a1a; color: #00ff00; font-family: 'Courier New', monospace; padding: 20px; }
-        .container { border: 1px solid #00ff00; padding: 20px; border-radius: 8px; }
+        body { background: #000; color: #0f0; font-family: monospace; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .hidden-content { display: none; padding: 20px; border: 1px solid #0f0; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>[ ACCÈS AUTORISÉ ]</h1>
-        <p>Bienvenue dans cet espace sécurisé.</p>
-        </div>
+
+    <div id="status">🔒 Système de vérification chiffré...</div>
+
+    <div id="secret-content" class="hidden-content">
+        <h1>[ ACCÈS CRYPTOGRAPHIQUE CONFIRMÉ ]</h1>
+        <p>Bienvenue. Ce contenu est protégé par un hash SHA-256.</p>
+        <p><i>Même le code source ne révèle pas votre mot de passe.</i></p>
+    </div>
+
+    <script>
+        // COLLE TON HASH ICI (celui généré à l'étape 1)
+        const HASH_VALIDE = "6A416B98973BED12BC12A9EC78E91380EA5395D2826D7EE257F234E646093B6D"; 
+
+        function verifierAcces() {
+            const saisie = prompt("Entrez la clé de déchiffrement :");
+            if (!saisie) return window.location.href = "https://google.com";
+
+            // Calcul du hash de ce que l'utilisateur a tapé
+            const hashSaisie = CryptoJS.SHA256(saisie).toString();
+
+            if (hashSaisie === HASH_VALIDE) {
+                document.getElementById('status').style.display = 'none';
+                document.getElementById('secret-content').style.display = 'block';
+                document.body.style.background = "#121212";
+            } else {
+                alert("Clé invalide. Déconnexion.");
+                window.location.href = "https://google.com";
+            }
+        }
+
+        window.onload = verifierAcces;
+    </script>
 </body>
 </html>
