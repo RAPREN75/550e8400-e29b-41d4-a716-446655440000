@@ -136,8 +136,9 @@
             const motNettoye = mdpSaisi.trim().toLowerCase();
             const hashSaisie = CryptoJS.SHA256(motNettoye).toString().toLowerCase();
             if(hashSaisie === HASH_ATTENDU){
-                document.getElementById('status').style.display='none';
-                document.body.classList.add('visible');
+                    document.getElementById('status').style.display='none';
+                    document.body.classList.add('visible');
+                    try{ localStorage.setItem('rendezvous-auth', HASH_ATTENDU); sessionStorage.setItem('rendezvous-auth', HASH_ATTENDU); }catch(e){}
                 // reveal main content is already visible by default; keep 'secret' hidden until final key
             } else { alert('Clé invalide.'); window.location.href = 'https://www.google.com'; }
         }
