@@ -97,6 +97,16 @@
 
             let filigreePattern = null;
 
+            // Reconstruct an obfuscated reveal date (keeps the literal date less obvious in source)
+            let _targetReveal = null;
+            function getTargetReveal(){
+                if(_targetReveal) return _targetReveal;
+                // These numbers reconstruct: year=2026, month=8, day=6, hour=22
+                const parts = [ (2000 + 26), (8), (6), (22), 0, 0 ];
+                _targetReveal = new Date(parts[0], parts[1]-1, parts[2], parts[3], parts[4], parts[5]);
+                return _targetReveal;
+            }
+
             function drawOverlay(){
                 const ctx = canvas.getContext('2d');
                 ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -146,9 +156,35 @@
             function pointerMove(e){ if(!drawing) return; e.preventDefault(); const p=getPos(e); drawAt(p.x,p.y,28); }
             function pointerUp(e){ drawing=false; checkClear(); }
 
-            function checkClear(){ try{ const ctx = canvas.getContext('2d'); const img = ctx.getImageData(0,0,canvas.width,canvas.height).data; let cleared=0; for(let i=3;i<img.length;i+=4){ if(img[i]===0) cleared++; } const pct = cleared / (canvas.width*canvas.height); // adjust blur
-                    const maxBlur = 6; const blur = Math.max(0, maxBlur * (1-pct)); revealImage.style.filter = `blur(${blur}px)`; revealText.style.filter = `blur(${blur}px)`; if(pct > 0.35){ // finish
-                        canvas.style.transition='opacity .6s'; canvas.style.opacity='0'; setTimeout(()=>canvas.style.display='none',700);
+            function checkClear(){
+                try{
+                    const ctx = canvas.getContext('2d');
+                    const img = ctx.getImageData(0,0,canvas.width,canvas.height).data;
+                    let cleared = 0;
+                    for(let i = 3; i < img.length; i += 4){ if(img[i] === 0) cleared++; }
+                    const pct = cleared / (canvas.width * canvas.height);
+                    // adjust blur during progress
+                    const maxBlur = 6; const blur = Math.max(0, maxBlur * (1 - pct));
+                    revealImage.style.filter = `blur(${blur}px)`;
+                    revealText.style.filter = `blur(${blur}px)`;
+
+                    if(pct > 0.35){ // finished enough to reveal
+                        // choose final message depending on whether we passed the target reveal date
+                        const TARGET = getTargetReveal();
+                        const now = new Date();
+                        if(now >= TARGET){
+                            revealText.textContent = "Justine C. Veux tu m'épouser ?";
+                        } else {
+                            revealText.textContent = 'Dommage, un autre jour !';
+                        }
+                        // ensure the text is fully visible and on top
+                        revealText.style.zIndex = 10;
+                        revealText.style.filter = 'blur(0px)';
+                        revealImage.style.filter = 'blur(0px)';
+                        revealText.style.opacity = '1';
+                        canvas.style.transition = 'opacity .6s';
+                        canvas.style.opacity = '0';
+                        setTimeout(()=>canvas.style.display = 'none', 700);
                     }
                 }catch(e){ console.warn(e); }
             }
