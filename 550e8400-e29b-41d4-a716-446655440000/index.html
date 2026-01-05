@@ -185,15 +185,15 @@
             }catch(e){ /* storage might be blocked */ }
 
             // Otherwise ask once and store the successful hash for the session/local browsing.
-            const mdpSaisi = prompt("Veuillez entrer la clé d'accès :");
-            if(!mdpSaisi){ window.location.href = "https://www.google.com"; return; }
+            const mdpSaisi = prompt("Chaque histoire a un commencement... Quel est le mot qui ouvre la nôtre ?");
+            if(!mdpSaisi){ window.location.href = '../index.html'; return; }
             const motNettoye = mdpSaisi.trim().toLowerCase();
             const hashSaisie = CryptoJS.SHA256(motNettoye).toString().toLowerCase();
-            if(hashSaisie === HASH_ATTENDU){
+                if(hashSaisie === HASH_ATTENDU){
                     document.getElementById('status').style.display='none';
                     document.body.classList.add('visible');
                     try{ localStorage.setItem('rendezvous-auth', HASH_ATTENDU); sessionStorage.setItem('rendezvous-auth', HASH_ATTENDU); }catch(e){}
-            } else { alert('Clé invalide.'); window.location.href = 'https://www.google.com'; }
+                } else { alert('Clé invalide.'); window.location.href = '../index.html'; }
         }
 
         window.onload = () => {
