@@ -31,102 +31,139 @@
     <div class="container">
         <a class="back-link" href="index.html">← Retour</a>
         <h2 style="font-family:'Playfair Display',serif;margin:6px 0 12px">Tentes ta chance</h2>
-        <div class="scratch-wrap">
+        <div class="scratch-wrap" id="lux-scratch">
             <div class="reveal" id="reveal">
-                <img id="reveal-image" src="https://via.placeholder.com/820x380.png?text=Dommage,+pas+maintenant+!" alt="Dommage, pas maintenant !" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">
-                <h1 id="reveal-text" style="display:none;margin:0;font-family:'Playfair Display',serif;font-size:32px;color:var(--text)">Veux-tu m'épouser ?</h1>
+                <img id="reveal-image" src="https://via.placeholder.com/820x380.png?text=Dommage,+pas+maintenant+!" alt="Dommage, pas maintenant !" style="width:100%;height:100%;object-fit:cover;border-radius:6px;filter:blur(6px);transition:filter .3s ease">
+                <h1 id="reveal-text" style="display:block;position:absolute;z-index:0;margin:0;font-family:'Playfair Display',serif;font-size:32px;color:rgba(255,241,200,0.95);text-shadow:0 2px 8px rgba(0,0,0,0.6);filter:blur(6px);transition:filter .3s ease;pointer-events:none">Veux-tu m'épouser ?</h1>
             </div>
+            <!-- canvas pour couche à gratter -->
             <canvas class="overlay" id="scratcher"></canvas>
+            <!-- canvas pour particules -->
+            <canvas id="particles" style="position:absolute;inset:0;pointer-events:none"></canvas>
         </div>
     </div>
 
     <script>
-        // Copie de la logique de grattage (reconstruction obfusquée de la date)
+        // Luxe scratch implementation: textured gold overlay, filigrane, particles, coin cursor
         (function(){
             const canvas = document.getElementById('scratcher');
-            const wrap = canvas.parentElement;
+            const pCanvas = document.getElementById('particles');
+            const wrap = document.getElementById('lux-scratch');
             const revealImage = document.getElementById('reveal-image');
             const revealText = document.getElementById('reveal-text');
 
-            let _targetReveal = null;
-            function getTargetReveal(){
-                if(_targetReveal) return _targetReveal;
-                // même obfuscation que dans index.html
-                const a = [4050, 15];
-                const b = [13, 103];
-                const c = [0, 0];
-                const offsets = [ (2000 + 24), (10 - 3), (20 - 13), (9 * 9), 0, 0 ];
-                const ob = a.concat(b, c);
-                const vals = ob.map((v,i) => v - offsets[i]);
-                _targetReveal = new Date(vals[0], vals[1] - 1, vals[2], vals[3], vals[4] || 0, vals[5] || 0);
-                return _targetReveal;
+            // coin cursor SVG data URL
+            const coinSvg = encodeURIComponent(`
+                <svg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 48 48'>
+                  <defs>
+                    <radialGradient id='g' cx='30%' cy='30%'><stop offset='0' stop-color='%23FFE98A'/><stop offset='1' stop-color='%23E1AD01'/></radialGradient>
+                  </defs>
+                  <circle cx='24' cy='24' r='20' fill='url(%23g)' stroke='%23C48A00' stroke-width='2'/>
+                  <g fill='%23fff' opacity='0.9'><circle cx='20' cy='18' r='2'/><path d='M22 30c1-4 6-4 7 0' stroke='%23FFF' stroke-width='1.5' fill='none'/></g>
+                </svg>
+            `);
+            wrap.style.cursor = `url("data:image/svg+xml;utf8,${coinSvg}") 24 24, auto`;
+
+            // style wrap border + glow
+            wrap.style.border = '3px solid rgba(0,200,140,0.95)';
+            wrap.style.boxShadow = '0 8px 30px rgba(0,168,255,0.12), 0 0 40px rgba(0,168,255,0.06)';
+            wrap.style.borderRadius = '12px';
+            wrap.style.position = 'relative';
+
+            // sizes
+            function resize(){
+                const w = wrap.clientWidth; const h = wrap.clientHeight;
+                canvas.width = w; canvas.height = h;
+                pCanvas.width = w; pCanvas.height = h;
+                drawOverlay();
             }
 
-            function updateRevealContent(){
-                const now = new Date();
-                const TARGET_REVEAL = getTargetReveal();
-                if(now >= TARGET_REVEAL){
-                    revealImage.style.display = 'none';
-                    revealText.style.display = 'block';
-                } else {
-                    revealImage.style.display = 'block';
-                    revealText.style.display = 'none';
-                }
+            // offscreen pattern for filigrane (hearts/dentelle)
+            function createFiligreePattern(w,h){
+                const off = document.createElement('canvas'); off.width = 120; off.height = 120; const octx = off.getContext('2d');
+                octx.clearRect(0,0,off.width,off.height);
+                octx.fillStyle = 'rgba(255,255,255,0.08)';
+                // simple lace: circles + small hearts
+                for(let y=20;y<off.height;y+=30){ for(let x=20;x<off.width;x+=30){ octx.beginPath(); octx.arc(x,y,3,0,Math.PI*2); octx.fill(); }}
+                // hearts
+                octx.fillStyle = 'rgba(255,245,200,0.06)';
+                function heart(cx,cy,sz){ octx.beginPath(); const s=sz/2; octx.moveTo(cx,cy); octx.bezierCurveTo(cx,cy-s, cx-s,cy-s, cx-s,cy); octx.bezierCurveTo(cx-s,cy+s, cx,cy+s*1.4, cx,cy+sz); octx.bezierCurveTo(cx,cy+s*1.4, cx+s,cy+s, cx+s,cy); octx.bezierCurveTo(cx+s,cy-s, cx,cy-s, cx,cy); octx.fill(); }
+                heart(40,40,8); heart(80,80,6);
+                return octx.createPattern(off,'repeat');
             }
 
-            updateRevealContent(); setInterval(updateRevealContent, 30*1000);
+            let filigreePattern = null;
 
-            function setupCanvas(){
-                function resize(){
-                    canvas.width = wrap.clientWidth;
-                    canvas.height = wrap.clientHeight;
-                    drawOverlay();
-                }
-                function drawOverlay(){
-                    const ctx = canvas.getContext('2d');
-                    ctx.globalCompositeOperation = 'source-over';
-                    const g = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
-                    g.addColorStop(0,'#d4a017'); g.addColorStop(1,'#f3d98a');
-                    ctx.fillStyle = g; ctx.fillRect(0,0,canvas.width,canvas.height);
-                    ctx.globalCompositeOperation = 'destination-out';
-                }
+            function drawOverlay(){
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0,0,canvas.width,canvas.height);
+                // brushed-metal / gold gradient
+                const g = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
+                g.addColorStop(0,'#E1AD01'); g.addColorStop(0.6,'#F3D56A'); g.addColorStop(1,'#FFEAA0');
+                ctx.fillStyle = g; ctx.fillRect(0,0,canvas.width,canvas.height);
 
-                resize();
+                // subtle grain / glitter
+                const grainCount = Math.floor((canvas.width*canvas.height)/8000);
+                ctx.fillStyle = 'rgba(255,255,255,0.06)';
+                for(let i=0;i<grainCount;i++){ const x=Math.random()*canvas.width; const y=Math.random()*canvas.height; ctx.fillRect(x, y, Math.random()*1.6, Math.random()*1.6); }
+
+                // filigree pattern
+                if(!filigreePattern) filigreePattern = createFiligreePattern(canvas.width, canvas.height);
+                ctx.globalAlpha = 0.10; ctx.fillStyle = filigreePattern; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.globalAlpha = 1;
+
+                // subtle noise overlay for brushed effect
+                ctx.fillStyle = 'rgba(0,0,0,0.02)';
+                for(let i=0;i<2000;i++){ const x=Math.random()*canvas.width; const y=Math.random()*canvas.height; ctx.fillRect(x,y,Math.random()*0.8,Math.random()*0.8); }
+
+                // prepare for erasing
+                ctx.globalCompositeOperation = 'destination-out';
+            }
+
+            // particles
+            const particles = [];
+            const pctx = pCanvas.getContext('2d');
+            function spawnParticles(x,y){
+                for(let i=0;i<6;i++){ particles.push({x,y,vx:(Math.random()-0.5)*3,vy:-Math.random()*2-1,life:60,sz:Math.random()*3+1,alpha:1}); }
+            }
+            function updateParticles(){
+                pctx.clearRect(0,0,pCanvas.width,pCanvas.height);
+                for(let i=particles.length-1;i>=0;i--){ const p=particles[i]; p.x+=p.vx; p.y+=p.vy; p.vy+=0.08; p.life--; p.alpha = p.life/60; pctx.fillStyle = `rgba(255,223,77,${p.alpha})`; pctx.beginPath(); pctx.arc(p.x,p.y,p.sz,0,Math.PI*2); pctx.fill(); if(p.life<=0) particles.splice(i,1); }
+                requestAnimationFrame(updateParticles);
+            }
+
+            // drawing (erasing) and clearing detection
+            function getPos(e){
+                const r = canvas.getBoundingClientRect(); const point = (e.touches && e.touches[0]) ? e.touches[0] : e; return {x: point.clientX - r.left, y: point.clientY - r.top};
+            }
+
+            let drawing=false;
+            function drawAt(x,y,sz=28){ const ctx = canvas.getContext('2d'); ctx.beginPath(); ctx.arc(x,y,sz,0,Math.PI*2); ctx.fill(); spawnParticles(x,y); }
+
+            function pointerDown(e){ drawing=true; const p=getPos(e); drawAt(p.x,p.y,28); }
+            function pointerMove(e){ if(!drawing) return; e.preventDefault(); const p=getPos(e); drawAt(p.x,p.y,28); }
+            function pointerUp(e){ drawing=false; checkClear(); }
+
+            function checkClear(){ try{ const ctx = canvas.getContext('2d'); const img = ctx.getImageData(0,0,canvas.width,canvas.height).data; let cleared=0; for(let i=3;i<img.length;i+=4){ if(img[i]===0) cleared++; } const pct = cleared / (canvas.width*canvas.height); // adjust blur
+                    const maxBlur = 6; const blur = Math.max(0, maxBlur * (1-pct)); revealImage.style.filter = `blur(${blur}px)`; revealText.style.filter = `blur(${blur}px)`; if(pct > 0.35){ // finish
+                        canvas.style.transition='opacity .6s'; canvas.style.opacity='0'; setTimeout(()=>canvas.style.display='none',700);
+                    }
+                }catch(e){ console.warn(e); }
+            }
+
+            // events
+            function addListeners(){
+                canvas.addEventListener('pointerdown', pointerDown, {passive:true});
+                window.addEventListener('pointerup', pointerUp, {passive:true});
+                canvas.addEventListener('pointermove', pointerMove, {passive:false});
+                // support touch
+                canvas.addEventListener('touchstart', e=>{ pointerDown(e.touches[0]); }, {passive:true});
+                canvas.addEventListener('touchmove', e=>{ pointerMove(e.touches[0]); }, {passive:false});
                 window.addEventListener('resize', resize);
-
-                let drawing=false;
-                function down(e){drawing=true; draw(e);} 
-                function up(){drawing=false; checkClear();}
-                function move(e){ if(drawing) draw(e); }
-
-                function getPos(e){
-                    const r = canvas.getBoundingClientRect();
-                    const x = (e.touches?e.touches[0].clientX:e.clientX) - r.left;
-                    const y = (e.touches?e.touches[0].clientY:e.clientY) - r.top;
-                    return {x,y};
-                }
-                function draw(e){
-                    const ctx = canvas.getContext('2d');
-                    const p = getPos(e);
-                    ctx.beginPath(); ctx.arc(p.x,p.y,30,0,Math.PI*2); ctx.fill();
-                }
-
-                canvas.addEventListener('mousedown',down); canvas.addEventListener('touchstart',down);
-                window.addEventListener('mouseup',up); canvas.addEventListener('touchend',up);
-                canvas.addEventListener('mousemove',move); canvas.addEventListener('touchmove',move);
-
-                function checkClear(){
-                    try{
-                        const ctx = canvas.getContext('2d');
-                        const imgData = ctx.getImageData(0,0,canvas.width,canvas.height).data;
-                        let cleared=0; for(let i=3;i<imgData.length;i+=4){ if(imgData[i]===0) cleared++; }
-                        const pct = cleared / (canvas.width*canvas.height) ;
-                        if(pct > 0.25){ canvas.style.transition='opacity .6s'; canvas.style.opacity='0'; setTimeout(()=>canvas.style.display='none',700); }
-                    }catch(e){ }
-                }
             }
 
-            setupCanvas();
+            // start
+            resize(); updateParticles(); addListeners();
+
         })();
     </script>
 </body>
